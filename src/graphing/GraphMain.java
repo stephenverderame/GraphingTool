@@ -5,7 +5,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -13,24 +12,20 @@ import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
 
 public class GraphMain extends JFrame implements ActionListener {
 	
 	private JButton importBtn, graphBtn;
 	private JTextField titleEntry;
-	private JComboBox<String> xSel, ySel, idSel;
+	private JComboBox<String> xSel, ySel, idSel, graphSel;
 	private DataReader dReader;
 	private JFreeChart chart;
 	private ChartPanel panel;
@@ -44,11 +39,15 @@ public class GraphMain extends JFrame implements ActionListener {
 		c.weightx = 0.5;
 		c.weighty = 0.5;
 		
-		c.gridx = 1;
+		c.gridx = 0;
 		c.gridy = 0;
 		importBtn = new JButton("Import Data");
 		importBtn.addActionListener(this);
 		this.add(importBtn, c);
+		String[] graphs = {"XY", "Time-Line", "Line", "Bar"};
+		graphSel = new JComboBox<String>(graphs);
+		c.gridx = 2;
+		this.add(graphSel, c);
 		String[] comboInit = {"No Imported Data"};
 		c.weighty = 0;
 		
@@ -103,7 +102,7 @@ public class GraphMain extends JFrame implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource() == importBtn) {
 			JFileChooser fc = new JFileChooser();
-			FileNameExtensionFilter filter = new FileNameExtensionFilter("Accepted Files", "csv", "txt");
+			FileNameExtensionFilter filter = new FileNameExtensionFilter("Accepted Files (.csv)", "csv");
 			fc.setFileFilter(filter);
 			int ret = fc.showOpenDialog(this);
 			if(ret == JFileChooser.APPROVE_OPTION){
@@ -112,52 +111,24 @@ public class GraphMain extends JFrame implements ActionListener {
 				initUI();
 			}
 		}else if(e.getSource() == graphBtn) {
-			XYSeriesCollection dataset = new XYSeriesCollection();
-			DataType typex = dReader.getVariableDataType((String)xSel.getSelectedItem());
-			DataType typey = dReader.getVariableDataType((String)ySel.getSelectedItem());
-			if(typex == DataType.STRING || typey == DataType.STRING){
-				JOptionPane.showMessageDialog(this, "Basic line graph only allows numerical inputs and output", "Graph Error", JOptionPane.ERROR_MESSAGE);
-				return;
-			}
-			if(idSel.getSelectedItem().equals("NULL")){
-				DataPoint[] pts = dReader.getAllPoints();
-				XYSeries series = new XYSeries((String)ySel.getSelectedItem() + " vs " + (String)xSel.getSelectedItem());
-				for(DataPoint pt : pts){
-					Double x = (Double)pt.getVariable((String)xSel.getSelectedItem()); //only numbers allowed in this basic graph
-					Double y = (Double)pt.getVariable((String)ySel.getSelectedItem());
-					series.add(x, y);
-					System.out.println("Adding (" + x + "," + y + ")");
-					
-				}
-				dataset.addSeries(series);
-			}else{
-				String objVarName = (String)idSel.getSelectedItem();
-				ArrayList<String> objs = dReader.getAllObjects(objVarName);
-				for(String obj : objs){
-					ArrayList<DataPoint> pts = dReader.getAllPointsWith(objVarName, obj);
-					XYSeries series = new XYSeries(obj);
-					for(DataPoint pt : pts){
-						Double x = (Double)pt.getVariable((String)xSel.getSelectedItem()); //only numbers allowed in this basic graph
-						Double y = (Double)pt.getVariable((String)ySel.getSelectedItem());
-						series.add(x, y);
-					}
-					dataset.addSeries(series);
-				}
-			}
-			chart = ChartFactory.createXYLineChart(titleEntry.getText(), (String)xSel.getSelectedItem(), (String)ySel.getSelectedItem(), dataset);
-			XYPlot plot = chart.getXYPlot();
+			Graph graph = Graph.GraphFactory((String)graphSel.getSelectedItem());
+			graph.init((String)xSel.getSelectedItem(), (String)ySel.getSelectedItem(), (String)idSel.getSelectedItem(), titleEntry.getText(), dReader);
+			chart = graph.getChart();
+/*			XYPlot plot = chart.getXYPlot();
 			plot.setRenderer(new XYLineAndShapeRenderer());
 			plot.setBackgroundPaint(Color.white);
 			plot.setRangeGridlinesVisible(true);
 			plot.setRangeGridlinePaint(Color.BLACK);
 			plot.setDomainGridlinesVisible(true);
-			plot.setDomainGridlinePaint(Color.BLACK);
-			chart.setTitle(titleEntry.getText());
+			plot.setDomainGridlinePaint(Color.BLACK);*/
 			
 			if(panel != null) this.remove(panel);
 			panel = new ChartPanel(chart);
 			panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 			panel.setBackground(Color.white);
+			panel.setMouseZoomable(true, false);
+			panel.setDomainZoomable(true);
+			panel.setRangeZoomable(true);
 			GridBagConstraints c = new GridBagConstraints();
 			c.weightx = 0.5;
 			c.weighty = 0.5;
