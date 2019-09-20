@@ -16,7 +16,7 @@ import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-
+//Source control tutorial
 public abstract class Graph {
 	protected JFreeChart chart;
 	public JFreeChart getChart() {
