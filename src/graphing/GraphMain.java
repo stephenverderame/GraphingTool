@@ -21,6 +21,8 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 
+//A new comment! (Git tutorial)
+
 public class GraphMain extends JFrame implements ActionListener {
 	
 	private JButton importBtn, graphBtn;
